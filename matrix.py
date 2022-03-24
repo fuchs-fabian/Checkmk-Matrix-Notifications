@@ -29,16 +29,21 @@ import random
 import string
 import sys
 import requests
+#from datetime import datetime
 
 MATRIXHOST = os.environ["NOTIFY_PARAMETER_1"]
 MATRIXTOKEN = os.environ["NOTIFY_PARAMETER_2"]
 MATRIXROOM = os.environ["NOTIFY_PARAMETER_3"]
 
+#TS = os.environ["NOTIFY_SHORTDATETIME"]
+#TS = datetime.strptime(TS, '%Y-%m-%d %H:%M:%S')
+#TS = TS.strftime('%H:%M:%S - %A %d. %b %Y')
+
 data = {
-    "TS": os.environ["NOTIFY_SHORTDATETIME"],
+    #"TS": TS,
 
     # Host related info.
-    "HOST": os.environ["NOTIFY_HOSTNAME"],
+    "HOST": os.environ["NOTIFY_HOSTNAME"].upper(),
     "HOSTADDR": os.environ["NOTIFY_HOSTADDRESS"],
     "HOSTSTATE": os.environ["NOTIFY_HOSTSTATE"],
     "HOSTSTATEPREVIOUS": os.environ["NOTIFY_LASTHOSTSTATE"],
@@ -53,32 +58,71 @@ data = {
     "SERVICEOUTPUT": os.environ["NOTIFY_SERVICEOUTPUT"]
 }
 
-servicemessage = '''Service <b>{SERVICE}</b> at <b>{HOST}</b> ({HOSTADDR}) | TS: {TS} | STATE: <b>{SERVICESTATE}</b>
-<br>{SERVICEOUTPUT}<br>'''
 
-hostmessage = '''Host <b>{HOST}</b> ({HOSTADDR}) | TS: {TS} | STATE: <b>{HOSTSTATE}</b>
-<br>{HOSTOUTPUT}<br>'''
+state = data["SERVICESTATE"]
+if (state == "OK"):
+    icon = "\U0001F7E2"
+elif (state == "WARNING"):
+    icon = "\U0001F7E1"
+elif (state == "UNKNOWN"):
+    icon = "\U0001F7E0"
+elif (state == "CRITICAL"):
+    icon = "\U0001F534"
+else:
+    icon = "\U0001F535"
+
+data["STATUSICON"] = icon
+data["SERVICESTATE"] = data["SERVICESTATE"][0:4]
+
+
+servicemessage = '''[{HOST}] - {HOSTADDR}
+[{STATUSICON} {SERVICESTATE}] - {SERVICE}
+{SERVICEOUTPUT}
+
+'''
+
+servicemessage_html = '''[<b>{HOST}</b>] - {HOSTADDR}<br>
+[{STATUSICON} {SERVICESTATE}] - <b>{SERVICE}</b><br>
+{SERVICEOUTPUT}<br><br>
+
+'''
+
+hostmessage = '''[{HOST} | {HOSTADDR}]
+[{STATUSICON} {HOSTSTATE}]
+{HOSTOUTPUT}
+
+'''
+
+hostmessage_html = '''[<b>{HOST}</b> | {HOSTADDR}]<br>
+[{STATUSICON} {HOSTSTATE}]<br>
+{HOSTOUTPUT}<br><br>
+
+'''
+
 
 message = ""
+message_html = ""
 
 print(data)
 
 # Checking host status first.
 if (data["HOSTSTATE"] != data["HOSTSTATEPREVIOUS"] or data["HOSTSTATECOUNT"] != "0"):
     message = hostmessage.format(**data)
+    message_html = hostmessage_html.format(**data)
 
 # Check service state.
 # We're replacing it because host state notifications flows in separately
 # from service state notifications and we have no need in host state here.
 if (data["SERVICESTATE"] != data["SERVICESTATEPREVIOUS"] or data["SERVICESTATECOUNT"] != "0") and (data["SERVICE"] != "$SERVICEDESC$"):
     message = servicemessage.format(**data)
+    message_html = servicemessage_html.format(**data)
 
 # Data we will send to Matrix Homeserver.
 matrixDataDict = {
     "msgtype": "m.text",
     "body": message,
     "format": "org.matrix.custom.html",
-    "formatted_body": message,
+    "formatted_body": message_html,
 }
 matrixData = json.dumps(matrixDataDict)
 matrixData = matrixData.encode("utf-8")

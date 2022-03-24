@@ -1,14 +1,18 @@
-# Check_mk notifications in Matrix
+# CheckMK notifications in Matrix
 
-This scripts gives your Check_mk installation a possibility to send notifications into [Matrix](https://matrix.org) chatroom.
+This scripts provides [Matrix](https://matrix.org) notification integration in CheckMK.
 
-## Installation
+It's basically a fork of a fork
+- Initial repo - [Stanislav N. aka pztrn](https://gitlab.com/pztrn/check_mk_matrix_notifications)
+- First fork - [bashclub](https://github.com/cysea/check_mk_matrix_notifications)
 
-To install this script do the following:
+I just made the output look a bit prettier :)
 
-1. Copy matrix.py file contents into clipboard.
-2. Execute ``omd su SITENAME``, where ``SITENAME`` is a site name for OMD. If you're using check_mk installed from source - skip this step.
-3. Open ``~/local/share/check_mk/notifications/matrix.py`` for editing and paste ``matrix.py`` file contents into it. Make it executable (``chmod +x ~/local/share/check_mk/notifications/matrix.py``). Check_mk installed from source can place it's files somewhere else and admins of these installations should figure out by themselves where to put this file.
+## Installation steps
+
+1. Copy matrix.py file contents into the clipboard.
+2. On the CheckMK server, execute ``omd su SITENAME``, where ``SITENAME`` is a site name for OMD. If CheckMK is installed from source - skip this step.
+3. Open ``~/local/share/check_mk/notifications/matrix.py`` for editing and paste the ``matrix.py`` file contents into it. Make it executable (``chmod +x ~/local/share/check_mk/notifications/matrix.py``). If CheckMK was installed from source, it's files can be placed elsewhere depending on the installation configuration.
 
 ### Dependencies
 
@@ -16,19 +20,19 @@ This script has no dependencies except Python 3. It was written specifically to 
 
 ## Configuration
 
-This script will send notifications as user, so you should create a separate user for it. Consult your homeserver's documentation about instructions.
+This script will send notifications as a user, so a dedicated user should be created for these purposes. Consult the homeserver documentation for  instructions.
 
-You'll need these parameters:
+The following parameters are required:
 
 * Homeserver URL - this is what you're specifying in Riot and other clients.
-* Notification bot user's token. To get it log in as created user, tap on settings icon in bottom left part of Riot and scroll in the very end.
+* Notification bot user's token. To get it in Element, log in as created user tap on the Profile picture on the top left and go to All settings > Help & About, and there should be a dropdown menu on teh bottom.
 * Room ID. It's available in room settings.
 
-After obtaining all of them you should create new notification with parameters like this:
+After obtaining all of the parameters, the fields in CheckMK should be populated like this:
 
 ![Check_mk notifications configuration](/check_mk_notifications_configuration.png)
 
-Where 1st parameter is a homeserver URL (with http or https), second parameter is a bot user's access token and third parameter is a room ID.
+Where the 1st parameter is a homeserver URL (with http or https), the second parameter is a bot user's access token and the third parameter is a room ID.
 
 ## How it will look like?
 
