@@ -2,12 +2,28 @@
 
 This script enables the integration of [Matrix](https://matrix.org) notifications in [Checkmk](https://checkmk.com/).
 
-## Example
+> A nice representation of the messages with optional parameters has been highlighted here.
 
-Notifications are usually sent via a Matrix group. Here is an example of how a Matrix notification is structured.
+## Examples
+
+> Notifications are usually sent via a Matrix group / room.
+
+### Extended example
 
 <div align="center">
-    <img src="notifications_in_matrix.png" style="width: auto;" alt="Checkmk notifications example"/>
+    <img src="/images/extended_example.png" style="max-width: 80%;" alt="Extended example notification"/>
+</div>
+
+### Basic example
+
+<div align="center">
+    <img src="/images/basic_example.png" style="max-width: 50%;" alt="Basic example notification"/>
+</div>
+
+### Structure
+
+<div align="center">
+    <img src="/images/structure.png" style="max-width: 60%;" alt="Structure notification"/>
 </div>
 
 ## Requirements
@@ -95,6 +111,10 @@ chmod +x ./matrix.py
    ```bash
    omd start
    ```
+   or
+   ```bash
+   omd restart
+   ```
 
 ### Dependencies
 
@@ -108,13 +128,23 @@ Create your own notification rule in Checkmk.
 
 `Setup → Events → Notifications`
 
-![Check_mk notifications configuration](check_mk_notifications_configuration.png)
+| parameter      | description                                                                  |
+| -------------- | ---------------------------------------------------------------------------- |
+| 1              | Home Server URL (with http or https)                                         |
+| 2              | Bot User's Access Token                                                      |
+| 3              | Room ID                                                                      |
+| 4 (_optional_) | Website e.g. the Checkmk instance                                            |
+| 5 (_optional_) | Additional information e.g. note to the person who is to rectify the problem |
 
-| parameter | description                          |
-| --------- | ------------------------------------ |
-| 1         | Home Server URL (with http or https) |
-| 2         | Bot User's Access Token              |
-| 3         | Room ID                              |
+> _Addition to "parameter 1"_: If you enter `default` here, `https://matrix-client.matrix.org` is used
+
+### Extended configuration
+
+![Extended configuration](/images/extended_configuration.png)
+
+### Basic configuration
+
+![Basic configuration](/images/basic_configuration.png)
 
 ## Troubleshooting
 
@@ -130,6 +160,46 @@ Possible HTTP error codes:
 | ------------------ | ----------------------- |
 | 401 (Unauthorized) | Invalid (user) token    |
 | 403 (Forbidden)    | Invalid Home Server URL |
+
+### Incorrect timezone
+
+To retrieve the current date on the host, use the following command:
+
+```bash
+date
+```
+
+Current output: `Wed Feb 28 20:58:22 UTC 2024`
+
+To adjust the timezone:
+
+```bash
+timedatectl set-timezone Europe/Berlin
+```
+
+Expected result: `Wed Feb 28 21:58:33 CET 2024`
+
+Restart the host or:
+
+```bash
+su - SITENAME
+```
+
+```bash
+omd restart
+```
+
+## Testing
+
+A big difference to other Checkmk notification scripts is that you can test the functionality of whether the message is really sent to Matrix in advance in another operating system. All you have to do is adapt the following lines in the Python script:
+
+```python
+MATRIX_HOST_MANUAL = ""
+MATRIX_TOKEN_MANUAL = ""
+MATRIX_ROOM_MANUAL = ""
+```
+
+> Remove these entries again after the test!
 
 ## Contributions
 
