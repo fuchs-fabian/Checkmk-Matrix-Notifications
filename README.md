@@ -33,8 +33,11 @@ In order for Checkmk to send notifications to the Matrix messenger, we need:
 
 - a Room ID
 
-  > You have to join with this special (Bot) account to this room before.  
+  > **You have to join** with this special (Bot) account to **this room** before!  
   > It's available in room settings.
+
+> With this script it is also possible to send messages to an _encrypted_ room. However, the message sent by the script itself is not encrypted.
+> ![Unencrypted](/images/unencrypted.png)
 
 There are many good instructions for this on the Internet, so this is not part of this documentation.
 
