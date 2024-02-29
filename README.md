@@ -145,7 +145,7 @@ Create your own notification rule in Checkmk.
 - [Checkmk Docs](https://docs.checkmk.com/latest/en/notifications.html#H1:Real)
 - Checkmk notification logfile
   ```bash
-  nano/omd/sites/SITENAME/var/log/notify.log
+  nano /omd/sites/SITENAME/var/log/notify.log
   ```
 
 ### HTTP error codes
