@@ -37,6 +37,7 @@ In order for Checkmk to send notifications to the Matrix messenger, we need:
   > It's available in room settings.
 
 > With this script it is also possible to send messages to an _encrypted_ room. However, the message sent by the script itself is not encrypted.
+>
 > ![Unencrypted](/images/unencrypted.png)
 
 There are many good instructions for this on the Internet, so this is not part of this documentation.
