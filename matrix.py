@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # https://docs.checkmk.com/latest/en/notifications.html#scripts
+# https://symbl.cc/en/unicode/table/
 
 # Copyright 2019, Stanislav N. aka pztrn
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
@@ -35,23 +36,23 @@ def initialize_data():
         "ADDITIONAL_INFO": os.environ.get("NOTIFY_PARAMETER_5", ""),
 
         # General information
-        "TYPE": os.environ.get("NOTIFY_WHAT", "default_type"),
-        "NOTIFICATION_TYPE": os.environ.get("NOTIFY_NOTIFICATIONTYPE", "default_notification_type"),
+        "NOTIFICATION_TYPE": os.environ.get("NOTIFY_NOTIFICATIONTYPE", "notification_type"),
+        "TYPE": os.environ.get("NOTIFY_WHAT", "SERVICE"),
         "DATETIME": os.environ.get("NOTIFY_SHORTDATETIME", datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
 
         # Host related information
-        "HOST_NAME": os.environ.get("NOTIFY_HOSTNAME", "default_host_name"),
-        "HOST_ALIAS": os.environ.get("NOTIFY_HOSTALIAS", "default_host_alias"),
-        "HOST_ADDRESS": os.environ.get("NOTIFY_HOSTADDRESS", "default_host_address"),
-        "HOST_STATE": os.environ.get("NOTIFY_HOSTSTATE", "default_host_state"),
-        "HOST_STATE_PREVIOUS": os.environ.get("NOTIFY_LASTHOSTSTATE", "default_last_host_state"),
-        "HOST_OUTPUT": os.environ.get("NOTIFY_HOSTOUTPUT", "default_host_output"),
+        "HOST_ALIAS": os.environ.get("NOTIFY_HOSTALIAS", "host_alias"),
+        "HOST_NAME": os.environ.get("NOTIFY_HOSTNAME", "host_name"),
+        "HOST_ADDRESS": os.environ.get("NOTIFY_HOSTADDRESS", "host_address"),
+        "HOST_PREVIOUS_STATE": os.environ.get("NOTIFY_LASTHOSTSTATE", "host_previous_state"),
+        "HOST_CURRENT_STATE": os.environ.get("NOTIFY_HOSTSTATE", "host_current_state"),
+        "HOST_OUTPUT": os.environ.get("NOTIFY_HOSTOUTPUT", "host_output"),
 
         # Service related information
-        "SERVICE_NAME": os.environ.get("NOTIFY_SERVICEDESC", "default_service_name"),
-        "SERVICE_STATE": os.environ.get("NOTIFY_SERVICESTATE", "default_service_state"),
-        "SERVICE_STATE_PREVIOUS": os.environ.get("NOTIFY_LASTSERVICESTATE", "default_last_service_state"),
-        "SERVICE_OUTPUT": os.environ.get("NOTIFY_SERVICEOUTPUT", "default_service_output")
+        "SERVICE_NAME": os.environ.get("NOTIFY_SERVICEDESC", "service_name"),
+        "SERVICE_PREVIOUS_STATE": os.environ.get("NOTIFY_LASTSERVICESTATE", "service_previous_state"),
+        "SERVICE_CURRENT_STATE": os.environ.get("NOTIFY_SERVICESTATE", "service_current_state"),
+        "SERVICE_OUTPUT": os.environ.get("NOTIFY_SERVICEOUTPUT", "service_output")
     }
 
     # If necessary, replace with default values or manual values
@@ -73,52 +74,73 @@ def initialize_data():
 
     return data
 
+def get_notification_type_icon(notification_type):
+    if notification_type == "PROBLEM":
+        return "\U0001F198" # SOS icon
+    elif notification_type == "RECOVERY":
+        return "\U00002705" # green check icon
+    else:
+        return "\U00002139" # info icon
+
+def get_notification_type_information(data):
+    notification_type = data["NOTIFICATION_TYPE"]
+    return f"{get_notification_type_icon(notification_type)} {notification_type}"
+
+def get_host_information(data):
+    host_alias = data["HOST_ALIAS"]
+    host_name = data["HOST_NAME"]
+    host_address = data["HOST_ADDRESS"]
+
+    host_parts = []
+
+    if host_alias:
+        host_parts.append(host_alias)
+
+    if host_name == host_address:
+        host_parts.append(host_name)
+    else:
+        host_parts.extend([host_name, host_address])
+
+    host_information = " | ".join(host_parts)
+    return f"[ {host_information} ]"
+
 def get_state_icon(state):
     if state == "OK" or state == "UP":
         return "\U0001F7E2" # green
     elif state == "WARNING":
         return "\U0001F7E1" # yellow
     elif state == "UNKNOWN" or state == "UNREACHABLE":
-        return "\U0001F7E0" # orange
+        return "\U0001F7E4" # brown
     elif state == "CRITICAL" or state == "DOWN":
         return "\U0001F534" # red
     else:
         return "\U0001F535" # blue
 
-def get_host_header(data):
-    host_alias = data["HOST_ALIAS"]
-    host_address = data["HOST_ADDRESS"]
-    host_name = data["HOST_NAME"]
-
-    header_parts = []
-
-    if host_alias:
-        header_parts.append(host_alias)
-
-    if host_address == host_name:
-        header_parts.append(host_address)
+def get_state_information(previous_state, current_state):
+    if previous_state == current_state:
+        return f"[ {get_state_icon(current_state)} {current_state} ]"
     else:
-        header_parts.extend([host_name, host_address])
+        return f"[ {get_state_icon(previous_state)} {previous_state} ] → [ {get_state_icon(current_state)} {current_state} ]"
 
-    return " | ".join(header_parts)
-
-def generate_messages(data, previous_status, current_status, name, output):
-    notification_type = data["NOTIFICATION_TYPE"]
-    notification_type_icon = "\U00002139" # info icon
+def generate_messages(data, previous_state, current_state, name, output):
     type = data["TYPE"]
     datetime = data["DATETIME"]
     site = data["SITE"]
     additional_info = data["ADDITIONAL_INFO"]
 
-    if notification_type == "PROBLEM":
-        notification_type_icon = "\U0001F198"  # SOS icon
-    elif notification_type == "RECOVERY":
-        notification_type_icon = "\U00002705"  # green check icon
+    message = (
+        f"{get_notification_type_information(data)} - {type} - {get_host_information(data)}\n\n"
+        f"{get_state_information(previous_state, current_state)} - {name}\n"
+        f"{output}\n\n"
+        f"{datetime}"
+    )
 
-    status = f"[ {get_state_icon(previous_status)} {previous_status} ] → [ {get_state_icon(current_status)} {current_status} ]"
-
-    message = f"{notification_type_icon} {notification_type} - {type}\n{get_host_header(data)}\n\n{name}\n{status}\n{output}\n\n{datetime}"
-    message_html = f"{notification_type_icon} <b>{notification_type}</b> - {type}<br><b>{get_host_header(data)}</b><br><br><b>{name}</b><br>{status}<br>{output}<br><br>{datetime}"
+    message_html = (
+        f"{get_notification_type_information(data)} - <b>{type}</b> - {get_host_information(data)}<br><br>"
+        f"{get_state_information(previous_state, current_state)} - <b>{name}</b><br>"
+        f"{output}<br><br>"
+        f"{datetime}"
+    )
 
     if site:
         message += f"\n\n{site}"
@@ -130,12 +152,11 @@ def generate_messages(data, previous_status, current_status, name, output):
 
     return message, message_html
 
-
 def generate_messages_for_type(data):
     if data["TYPE"] == "SERVICE":
-        return generate_messages(data, data["SERVICE_STATE_PREVIOUS"], data["SERVICE_STATE"], data["SERVICE_NAME"], data["SERVICE_OUTPUT"])
+        return generate_messages(data, data["SERVICE_PREVIOUS_STATE"], data["SERVICE_CURRENT_STATE"], data["SERVICE_NAME"], data["SERVICE_OUTPUT"])
     else:
-        return generate_messages(data, data["HOST_STATE_PREVIOUS"], data["HOST_STATE"], data["HOST_NAME"], data["HOST_OUTPUT"])
+        return generate_messages(data, data["HOST_PREVIOUS_STATE"], data["HOST_CURRENT_STATE"], data["HOST_NAME"], data["HOST_OUTPUT"])
 
 def send_matrix_message(data, message, message_html):
     matrix_host = data["MATRIX_HOST"]

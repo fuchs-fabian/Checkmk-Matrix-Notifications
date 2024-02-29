@@ -2,33 +2,23 @@
 
 This script enables the integration of [Matrix](https://matrix.org) notifications in [Checkmk](https://checkmk.com/).
 
+Notifications are usually sent via a Matrix group / room.
+
 > A nice representation of the messages with optional parameters has been highlighted here.
 
 ## Examples
 
-> Notifications are usually sent via a Matrix group / room.
+![Examples](/images/examples.png)
 
-### Extended example
+## Structure
 
-<div align="center">
-    <img src="/images/extended_example.png" style="max-width: 80%;" alt="Extended example notification"/>
-</div>
+![Structure](/images/structure.png)
 
-### Basic example
-
-<div align="center">
-    <img src="/images/basic_example.png" style="max-width: 50%;" alt="Basic example notification"/>
-</div>
-
-### Structure
-
-<div align="center">
-    <img src="/images/structure.png" style="max-width: 60%;" alt="Structure notification"/>
-</div>
+If the previous state and the current state are identical, only the current state is output.
 
 ## Requirements
 
-In order for Checkmk to send notifications to the Matrix Messenger, we need:
+In order for Checkmk to send notifications to the Matrix messenger, we need:
 
 - a Home Server URL, e.g., for a standard Matrix user `https://matrix-client.matrix.org`
 
@@ -136,15 +126,15 @@ Create your own notification rule in Checkmk.
 | 4 (_optional_) | Website e.g. the Checkmk instance                                            |
 | 5 (_optional_) | Additional information e.g. note to the person who is to rectify the problem |
 
-> _Addition to "parameter 1"_: If you enter `default` here, `https://matrix-client.matrix.org` is used
-
-### Extended configuration
-
-![Extended configuration](/images/extended_configuration.png)
+> _Addition to "parameter 1"_: If you enter `default` here, `https://matrix-client.matrix.org` is used.
 
 ### Basic configuration
 
 ![Basic configuration](/images/basic_configuration.png)
+
+### Extended configuration
+
+![Extended configuration](/images/extended_configuration.png)
 
 ## Troubleshooting
 
@@ -154,7 +144,7 @@ Create your own notification rule in Checkmk.
   nano/omd/sites/SITENAME/var/log/notify.log
   ```
 
-Possible HTTP error codes:
+### HTTP error codes
 
 | error code         | possible problem        |
 | ------------------ | ----------------------- |
