@@ -10,9 +10,7 @@
 
 import json
 import os
-import random
-import string
-import sys
+import uuid
 import requests
 from datetime import datetime
 
@@ -122,7 +120,7 @@ def get_state_information(previous_state, current_state):
     else:
         return f"[ {get_state_icon(previous_state)} {previous_state} ] → [ {get_state_icon(current_state)} {current_state} ]"
 
-def generate_messages(data, previous_state, current_state, name, output):
+def create_messages_with_information(data, previous_state, current_state, name, output):
     type = data["TYPE"]
     datetime = data["DATETIME"]
     site = data["SITE"]
@@ -152,45 +150,41 @@ def generate_messages(data, previous_state, current_state, name, output):
 
     return message, message_html
 
-def generate_messages_for_type(data):
+def create_messages(data):
     if data["TYPE"] == "SERVICE":
-        return generate_messages(data, data["SERVICE_PREVIOUS_STATE"], data["SERVICE_CURRENT_STATE"], data["SERVICE_NAME"], data["SERVICE_OUTPUT"])
+        return create_messages_with_information(data, data["SERVICE_PREVIOUS_STATE"], data["SERVICE_CURRENT_STATE"], data["SERVICE_NAME"], data["SERVICE_OUTPUT"])
     else:
-        return generate_messages(data, data["HOST_PREVIOUS_STATE"], data["HOST_CURRENT_STATE"], data["HOST_NAME"], data["HOST_OUTPUT"])
+        return create_messages_with_information(data, data["HOST_PREVIOUS_STATE"], data["HOST_CURRENT_STATE"], data["HOST_NAME"], data["HOST_OUTPUT"])
 
-def send_matrix_message(data, message, message_html):
+def send(data, message, message_html):
     matrix_host = data["MATRIX_HOST"]
     matrix_token = data["MATRIX_TOKEN"]
     matrix_room = data["MATRIX_ROOM"]
 
-    # Data send to Matrix Home Server
+    # Data send to Matrix
     matrix_data_dict = {
         "msgtype": "m.text",
         "body": message,
         "format": "org.matrix.custom.html",
         "formatted_body": message_html,
     }
-    matrix_data = json.dumps(matrix_data_dict)
-    matrix_data = matrix_data.encode("utf-8")
-
-    # Random transaction ID for Matrix Home Server
-    txn_id = "".join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(16))
+    matrix_data = json.dumps(matrix_data_dict).encode("utf-8")
 
     # Authorization headers
     matrix_headers = {"Authorization": "Bearer " + matrix_token, "Content-Type": "application/json", "Content-Length": str(len(matrix_data))}
 
     # Request
-    req = requests.put(url=f"{matrix_host}/_matrix/client/r0/rooms/{matrix_room}/send/m.room.message/{txn_id}", data=matrix_data, headers=matrix_headers)
+    request = requests.put(url=f"{matrix_host}/_matrix/client/r0/rooms/{matrix_room}/send/m.room.message/{str(uuid.uuid4())}", data=matrix_data, headers=matrix_headers)
 
-    if req.status_code == 200:
+    if request.status_code == 200:
         print("Message sent successfully")
     else:
-        print(f"Failed to send message. Status code: {req.status_code}")
+        print(f"Failed to send message. Status code: {request.status_code}")
 
 # Run
 try:
     data = initialize_data()
-    message, message_html = generate_messages_for_type(data)
-    send_matrix_message(data, message, message_html)
+    message, message_html = create_messages(data)
+    send(data, message, message_html)
 except Exception as e:
     print(f"An error occurred: {e}")

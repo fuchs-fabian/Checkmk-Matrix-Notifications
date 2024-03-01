@@ -1,4 +1,4 @@
-# Checkmk Matrix notifications
+# Checkmk Matrix Notifications
 
 This script enables the integration of [Matrix](https://matrix.org) notifications in [Checkmk](https://checkmk.com/).
 
@@ -18,27 +18,9 @@ If the previous state and the current state are identical, only the current stat
 
 ## Requirements
 
-In order for Checkmk to send notifications to the Matrix messenger, we need:
+You can find detailed information about what you need and what is required in the template [matrix-notify-py](https://github.com/fuchs-fabian/matrix-notify-py?tab=readme-ov-file#requirements).
 
-- a Home Server URL, e.g., for a standard Matrix user `https://matrix-client.matrix.org`
-
-  > It's available in account settings.
-
-- a Matrix (Bot) User and its user token
-
-  > Create a special user! Don't use your main account!  
-  > It's available in account settings.  
-  > To get it in [Element](https://element.io/), log in as the created (Bot) User, tap on the profile picture on the top left, and go to `all settings → Help and Info`.
-  > There should be a dropdown menu on the bottom (Access token).
-
-- a Room ID
-
-  > **You have to join** with this special (Bot) account to **this room** before!  
-  > It's available in room settings.
-
-> With this script it is also possible to send messages to an _encrypted_ room. However, the message sent by the script itself is not encrypted.
->
-> ![Unencrypted](/images/unencrypted.png)
+Further details can be found in the [Configuration](https://github.com/fuchs-fabian/Checkmk-Matrix-Notifications?tab=readme-ov-file#configuration) section.
 
 There are many good instructions for this on the Internet, so this is not part of this documentation.
 
@@ -130,7 +112,10 @@ Create your own notification rule in Checkmk.
 | 4 (_optional_) | Website e.g. the Checkmk instance                                            |
 | 5 (_optional_) | Additional information e.g. note to the person who is to rectify the problem |
 
-> _Addition to "parameter 1"_: If you enter `default` here, `https://matrix-client.matrix.org` is used.
+### Further explanations of the parameters
+
+- _parameter 1_: If you enter `default` here, `https://matrix-client.matrix.org` is used
+- _parameter 4 and 5_: These are intended for the content described above, but you can also enter any content here
 
 ### Basic configuration
 
