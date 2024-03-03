@@ -8,32 +8,38 @@
 # The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import json
 import os
+import json
 import uuid
 import requests
+import subprocess
 from datetime import datetime
 
-DEFAULT_MATRIX_HOST = "https://matrix-client.matrix.org"
+DEFAULT_MATRIX_HOMESERVER_URL = "https://matrix-client.matrix.org"
+DEFAULT_USE_E2E = "False"
+CHECKMK_NOTIFICATION_DIRECTORY = "/local/share/check_mk/notifications/"
 
-# Only for test purposes
-# Overwrites the environment variables
-MATRIX_HOST_MANUAL = ""
-MATRIX_TOKEN_MANUAL = ""
-MATRIX_ROOM_MANUAL = ""
+# Only for test purposes - overwrites the environment variables
+CHECKMK_USES_THE_SCRIPT = True
+MATRIX_HOMESERVER_URL = ""
+MATRIX_ACCESS_TOKEN = ""
+MATRIX_ROOM_ID = ""
 
 # Environment variables 
 # nano /omd/sites/SITENAME/etc/nagios/conf.d/check_mk_templates.cfg
 def initialize_data():
     data = {
         # Notification parameters
-        "MATRIX_HOST": os.environ.get("NOTIFY_PARAMETER_1", ""),
-        "MATRIX_TOKEN": os.environ.get("NOTIFY_PARAMETER_2", ""),
-        "MATRIX_ROOM": os.environ.get("NOTIFY_PARAMETER_3", ""),
-        "SITE": os.environ.get("NOTIFY_PARAMETER_4", ""),
-        "ADDITIONAL_INFO": os.environ.get("NOTIFY_PARAMETER_5", ""),
+        "HOMESERVER_URL": os.environ.get("NOTIFY_PARAMETER_1", ""),
+        "ACCESS_TOKEN": os.environ.get("NOTIFY_PARAMETER_2", ""),
+        "ROOM_ID": os.environ.get("NOTIFY_PARAMETER_3", ""),
+        "USE_E2E": os.environ.get("NOTIFY_PARAMETER_4", DEFAULT_USE_E2E),
+        "SITE": os.environ.get("NOTIFY_PARAMETER_5", ""),
+        "ADDITIONAL_INFO": os.environ.get("NOTIFY_PARAMETER_6", ""),
 
         # General information
+        "ROOT": os.environ.get("OMD_ROOT", ""),
+        "SITENAME": os.environ.get("OMD_SITE", ""),
         "NOTIFICATION_TYPE": os.environ.get("NOTIFY_NOTIFICATIONTYPE", "notification_type"),
         "TYPE": os.environ.get("NOTIFY_WHAT", "SERVICE"),
         "DATETIME": os.environ.get("NOTIFY_SHORTDATETIME", datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
@@ -53,22 +59,22 @@ def initialize_data():
         "SERVICE_OUTPUT": os.environ.get("NOTIFY_SERVICEOUTPUT", "service_output")
     }
 
-    # If necessary, replace with default values or manual values
-    if not data["MATRIX_HOST"]:
-        if MATRIX_HOST_MANUAL:
-            if MATRIX_HOST_MANUAL.upper() == "DEFAULT":
-                data["MATRIX_HOST"] = DEFAULT_MATRIX_HOST
+    # If necessary, replace with default values
+    if not data["HOMESERVER_URL"]:
+        if MATRIX_HOMESERVER_URL:
+            if MATRIX_HOMESERVER_URL.upper() == "DEFAULT":
+                data["HOMESERVER_URL"] = DEFAULT_MATRIX_HOMESERVER_URL
             else:
-                data["MATRIX_HOST"] = MATRIX_HOST_MANUAL
+                data["HOMESERVER_URL"] = MATRIX_HOMESERVER_URL
 
-    if (data["MATRIX_HOST"]).upper() == "DEFAULT":
-            data["MATRIX_HOST"] = DEFAULT_MATRIX_HOST
+    if (data["HOMESERVER_URL"]).upper() == "DEFAULT":
+            data["HOMESERVER_URL"] = DEFAULT_MATRIX_HOMESERVER_URL
 
-    if (not data["MATRIX_TOKEN"]) and MATRIX_TOKEN_MANUAL:
-        data["MATRIX_TOKEN"] = MATRIX_TOKEN_MANUAL
+    if (not data["ACCESS_TOKEN"]) and MATRIX_ACCESS_TOKEN:
+        data["ACCESS_TOKEN"] = MATRIX_ACCESS_TOKEN
 
-    if (not data["MATRIX_ROOM"]) and MATRIX_ROOM_MANUAL:
-        data["MATRIX_ROOM"] = MATRIX_ROOM_MANUAL
+    if (not data["ROOM_ID"]) and MATRIX_ROOM_ID:
+        data["ROOM_ID"] = MATRIX_ROOM_ID
 
     return data
 
@@ -156,35 +162,67 @@ def create_messages(data):
     else:
         return create_messages_with_information(data, data["HOST_PREVIOUS_STATE"], data["HOST_CURRENT_STATE"], data["HOST_NAME"], data["HOST_OUTPUT"])
 
-def send(data, message, message_html):
-    matrix_host = data["MATRIX_HOST"]
-    matrix_token = data["MATRIX_TOKEN"]
-    matrix_room = data["MATRIX_ROOM"]
+def get_path_for_matrix_commander(root_directory):
+    command = "matrix-commander"
+    if CHECKMK_USES_THE_SCRIPT:
+        return f"{root_directory}/.local/bin/{command}"
+    else:
+        return command
 
-    # Data send to Matrix
-    matrix_data_dict = {
+def get_path_for_credentials_file(root_directory):
+    filename = "credentials.json"
+    if CHECKMK_USES_THE_SCRIPT:
+        return f"{root_directory}{CHECKMK_NOTIFICATION_DIRECTORY}{filename}"
+    else:
+        return "credentials.json"
+
+def get_path_for_store_directory(root_directory):
+    directory = "store/"
+    if CHECKMK_USES_THE_SCRIPT:
+        return f"{root_directory}{CHECKMK_NOTIFICATION_DIRECTORY}{directory}"
+    else:
+        return f"./{directory}"
+
+def send_with_e2e(path_for_matrix_commander, path_for_credentials_file, path_for_store_directory, message_html, room_id):
+    command = [
+        path_for_matrix_commander,
+        "-c", path_for_credentials_file,
+        "-s", path_for_store_directory,
+        "-m", message_html,
+        "--room", room_id,
+        "--html",
+    ]
+
+    try:
+        subprocess.run(command, check=True)
+        print("Message sent successfully (with E2E).")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to send message (with E2E). Error: {e}")
+
+def send_without_e2e(message, message_html, homeserver_url, access_token, room_id):
+    message_data = {
         "msgtype": "m.text",
         "body": message,
         "format": "org.matrix.custom.html",
         "formatted_body": message_html,
     }
-    matrix_data = json.dumps(matrix_data_dict).encode("utf-8")
+    message_data_json = json.dumps(message_data).encode("utf-8")
+    authorization_headers = {"Authorization": "Bearer " + access_token, "Content-Type": "application/json", "Content-Length": str(len(message_data_json))}
 
-    # Authorization headers
-    matrix_headers = {"Authorization": "Bearer " + matrix_token, "Content-Type": "application/json", "Content-Length": str(len(matrix_data))}
-
-    # Request
-    request = requests.put(url=f"{matrix_host}/_matrix/client/r0/rooms/{matrix_room}/send/m.room.message/{str(uuid.uuid4())}", data=matrix_data, headers=matrix_headers)
+    request = requests.put(url=f"{homeserver_url}/_matrix/client/r0/rooms/{room_id}/send/m.room.message/{str(uuid.uuid4())}", data=message_data_json, headers=authorization_headers)
 
     if request.status_code == 200:
-        print("Message sent successfully")
+        print("Message sent successfully (without E2E).")
     else:
-        print(f"Failed to send message. Status code: {request.status_code}")
+        print(f"Failed to send message (without E2E). Status code: {request.status_code}")
 
-# Run
 try:
     data = initialize_data()
     message, message_html = create_messages(data)
-    send(data, message, message_html)
+    if str(data["USE_E2E"]).lower() in ["true", "yes", "e2e"]:
+        root_directory = data["ROOT"]
+        send_with_e2e(get_path_for_matrix_commander(root_directory), get_path_for_credentials_file(root_directory), get_path_for_store_directory(root_directory), message_html, data["ROOM_ID"])
+    else:
+        send_without_e2e(message, message_html, data["HOMESERVER_URL"], data["ACCESS_TOKEN"], data["ROOM_ID"])
 except Exception as e:
     print(f"An error occurred: {e}")

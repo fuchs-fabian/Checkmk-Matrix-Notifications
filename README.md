@@ -1,10 +1,13 @@
 # Checkmk Matrix Notifications
 
-This script enables the integration of [Matrix](https://matrix.org) notifications in [Checkmk](https://checkmk.com/).
+This script enables the integration of [Matrix](https://matrix.org) notifications in [Checkmk](https://checkmk.com/), optionally with **E2E**.
 
 Notifications are usually sent via a Matrix group / room.
 
-> A nice representation of the messages with optional parameters has been highlighted here.
+> **E2E** is disabled by default as it requires additional steps to set up. However, you will find instructions below.  
+> Great importance was also attached to an appealing display of messages with optional parameters.
+
+As I do not use Checkmk as a [Docker](https://www.docker.com/) container, I cannot guarantee that it will work. If you have any suggestions, improvements, etc., please open an issue or create a fork and don't hesitate to open a PR.
 
 ## Examples
 
@@ -18,11 +21,9 @@ If the previous state and the current state are identical, only the current stat
 
 ## Requirements
 
-You can find detailed information about what you need and what is required in the template [matrix-notify-py](https://github.com/fuchs-fabian/matrix-notify-py?tab=readme-ov-file#requirements).
+> You can find detailed information about what you need and what is required in the **template [`matrix-notify-py`](https://github.com/fuchs-fabian/matrix-notify-py?tab=readme-ov-file#requirements)**.
 
 Further details can be found in the [Configuration](https://github.com/fuchs-fabian/Checkmk-Matrix-Notifications?tab=readme-ov-file#configuration) section.
-
-There are many good instructions for this on the Internet, so this is not part of this documentation.
 
 ## Installation
 
@@ -44,10 +45,10 @@ Example:
 su - monitoring
 ```
 
-Install the `requests` package:
+Install the packages:
 
 ```bash
-pip install requests
+pip install requests matrix-commander
 ```
 
 Change to the notification directory:
@@ -74,6 +75,16 @@ Give the script execution permissions:
 chmod +x ./matrix.py
 ```
 
+> If you decide to send messages end-to-end encrypted, you must continue here! However, if you don't need it, you can skip this part.
+
+```bash
+/omd/sites/SITENAME/.local/bin/matrix-commander --login PASSWORD --device 'REPLACE-ME' --user-login 'REPLACE-ME' --password 'REPLACE-ME' --homeserver 'REPLACE-ME' --room-default 'REPLACE-ME'
+```
+
+> You have to replace all `REPLACE-ME` with your own credentials!
+
+To verify the session, I refer to the template again: [`matrix-notify-py`](https://github.com/fuchs-fabian/matrix-notify-py?tab=readme-ov-file#installation)
+
 ### Activate changes
 
 1. Activate on selected sites
@@ -94,9 +105,9 @@ chmod +x ./matrix.py
 
 ### Dependencies
 
-This script has no dependencies except Python 3 and the `requests` package.
+This script has no dependencies except Python 3.10+, the `requests` and `matrix-commander` package.
 
-> It was written specifically to be very compact and understandable.
+> It was written specifically to be very "compact" and understandable.
 
 ## Configuration
 
@@ -104,26 +115,42 @@ Create your own notification rule in Checkmk.
 
 `Setup → Events → Notifications`
 
-| parameter      | description                                                                  |
-| -------------- | ---------------------------------------------------------------------------- |
-| 1              | Home Server URL (with http or https)                                         |
-| 2              | Bot User's Access Token                                                      |
-| 3              | Room ID                                                                      |
-| 4 (_optional_) | Website e.g. the Checkmk instance                                            |
-| 5 (_optional_) | Additional information e.g. note to the person who is to rectify the problem |
-
-### Further explanations of the parameters
-
-- _parameter 1_: If you enter `default` here, `https://matrix-client.matrix.org` is used
-- _parameter 4 and 5_: These are intended for the content described above, but you can also enter any content here
+| parameter      | description                                                                                | Further explanations                                                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| 1              | Homeserver URL (with http or https) → _is ignored if you use E2E, but should not be empty_ | If you enter `default` (upper and lower case is ignored) here, `https://matrix-client.matrix.org` is used                   |
+| 2              | Access Token → _is ignored if you use E2E, but should not be empty_                        |                                                                                                                             |
+| 3              | Room ID                                                                                    |                                                                                                                             |
+| 4              | Activate end-to-end encryption, `False` by default                                         | E2E is only possible if the following is entered here (upper and lower case is ignored): `true`, `yes`, `e2e`               |
+| 5 (_optional_) | Website e.g. the Checkmk instance                                                          | Parameter 4 must have a value! It is intended for the situation described, but you can also write other things in it        |
+| 6 (_optional_) | Additional information e.g. note to the person who is to rectify the problem               | Parameters 4 and 5 must have a value! It is intended for the situation described, but you can also write other things in it |
 
 ### Basic configuration
 
 ![Basic configuration](/images/basic_configuration.png)
 
-### Extended configuration
+### Configurations with all parameters
 
-![Extended configuration](/images/extended_configuration.png)
+#### Without E2E
+
+| parameter      |                               |
+| -------------- | ----------------------------- |
+| 1              | `default`                     |
+| 2              | USERTOKEN                     |
+| 3              | ROOMID                        |
+| 4              | `False`                       |
+| 5 (_optional_) | `https://checkmk.hello.world` |
+| 6 (_optional_) | `Hello World`                 |
+
+#### With E2E
+
+| parameter      |                               |
+| -------------- | ----------------------------- |
+| 1              | `I do not care`               |
+| 2              | `I do not care`               |
+| 3              | ROOMID                        |
+| 4              | `True`                        |
+| 5 (_optional_) | `https://checkmk.hello.world` |
+| 6 (_optional_) | `Hello World`                 |
 
 ## Troubleshooting
 
@@ -173,12 +200,15 @@ omd restart
 A big difference to other Checkmk notification scripts is that you can test the functionality of whether the message is really sent to Matrix in advance in another operating system. All you have to do is adapt the following lines in the Python script:
 
 ```python
-MATRIX_HOST_MANUAL = ""
-MATRIX_TOKEN_MANUAL = ""
-MATRIX_ROOM_MANUAL = ""
+CHECKMK_USES_THE_SCRIPT = False
+MATRIX_HOMESERVER_URL = ""
+MATRIX_ACCESS_TOKEN = ""
+MATRIX_ROOM_ID = ""
 ```
 
 > Remove these entries again after the test!
+
+[More information](https://github.com/fuchs-fabian/matrix-notify-py?tab=readme-ov-file#test-and-try-with-conda)
 
 ## Contributions
 
