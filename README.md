@@ -90,11 +90,15 @@ You will of course need to customise it.
 /omd/sites/SITENAME/.local/bin/matrix-commander --room 'REPLACE-ME' --message "First encrypted message :)"
 ```
 
-To verify the session, I refer to the template again: [`matrix-notify-py`](https://github.com/fuchs-fabian/matrix-notify-py?tab=readme-ov-file#installation)
+Verify a session (See also: [`matrix-notify-py`](https://github.com/fuchs-fabian/matrix-notify-py?tab=readme-ov-file#installation)):
+
+```bash
+/omd/sites/SITENAME/.local/bin/matrix-commander --verify emoji
+```
 
 ### Activate changes
 
-1. Activate on selected sites
+1. (Activate on selected sites)
 2. Restart host or
    ```bash
    su - SITENAME
