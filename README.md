@@ -87,7 +87,7 @@ So that you can verify the session directly without waiting for Checkmk to send 
 You will of course need to customise it.
 
 ```bash
-/omd/sites/SITENAME/.local/bin/matrix-commander --room 'REPLACE-ME' --message "First encrypted message :)"
+/omd/sites/SITENAME/.local/bin/matrix-commander --room 'REPLACE-ME' --message 'First encrypted message :)'
 ```
 
 Verify a session (See also: [`matrix-notify-py`](https://github.com/fuchs-fabian/matrix-notify-py?tab=readme-ov-file#installation)):
