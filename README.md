@@ -83,6 +83,13 @@ chmod +x ./matrix.py
 
 > You have to replace all `REPLACE-ME` with your own credentials!
 
+So that you can verify the session directly without waiting for Checkmk to send a message, you can use the following command.  
+You will of course need to customise it.
+
+```bash
+/omd/sites/SITENAME/.local/bin/matrix-commander --room 'REPLACE-ME' --message "First encrypted message :)"
+```
+
 To verify the session, I refer to the template again: [`matrix-notify-py`](https://github.com/fuchs-fabian/matrix-notify-py?tab=readme-ov-file#installation)
 
 ### Activate changes
