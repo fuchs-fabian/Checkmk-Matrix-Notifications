@@ -21,7 +21,7 @@ If the previous state and the current state are identical, only the current stat
 
 ## Requirements
 
-> You can find detailed information about what you need and what is required in the **template [`matrix-notify-py`](https://github.com/fuchs-fabian/matrix-notify-py?tab=readme-ov-file#requirements)**.
+> You can find detailed information about what you need and what is required in the **template [`matrix-notify-py-template`](https://github.com/fuchs-fabian/matrix-notify-py-template?tab=readme-ov-file#requirements)**.
 
 Further details can be found in the [Configuration](https://github.com/fuchs-fabian/Checkmk-Matrix-Notifications?tab=readme-ov-file#configuration) section.
 
@@ -90,7 +90,7 @@ You will of course need to customise it.
 /omd/sites/SITENAME/.local/bin/matrix-commander --room 'REPLACE-ME' --message 'First encrypted message :)'
 ```
 
-Verify a session (See also: [`matrix-notify-py`](https://github.com/fuchs-fabian/matrix-notify-py?tab=readme-ov-file#installation)):
+Verify a session (See also: [`matrix-notify-py-template`](https://github.com/fuchs-fabian/matrix-notify-py-template?tab=readme-ov-file#installation)):
 
 ```bash
 /omd/sites/SITENAME/.local/bin/matrix-commander --verify emoji
